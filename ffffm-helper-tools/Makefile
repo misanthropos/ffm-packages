@@ -34,6 +34,7 @@ define Package/$(PKG_NAME)/install
 	$(INSTALL_BIN) ./files/usr/bin/help $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/usr/bin/nodeinfo $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/usr/bin/meshinfo $(1)/usr/bin/
+	$(INSTALL_BIN) ./files/usr/bin/gw.sh $(1)/usr/bin/
 endef
 
 $(eval $(call BuildPackage,$(PKG_NAME)))
