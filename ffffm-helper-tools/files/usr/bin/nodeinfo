@@ -1,4 +1,7 @@
 #!/bin/sh
+. /usr/share/libubox/jshn.sh
+json_init 
+_set_var _json_no_warning 1
 
 NODEINFO="$(mktemp -p /tmp)"
 gluon-neighbour-info -d ::1 -p 1001 -c 1 -r nodeinfo > $NODEINFO
@@ -32,25 +35,11 @@ echo -n "### Node ID: "
 jsonfilter -i $NODEINFO -e '@.node_id'
 echo -n "### Node MAC: "
 jsonfilter -i $NODEINFO -e '@.network.mac'
-echo -n "### Node IPv6: "
+echo  "### Node IPv6: "
 jsonfilter -i $NODEINFO -e '@.network.addresses.*'
 
 echo
 echo "### (Next)Node IPv4:   $(uci -q get network.local_node.ipaddr || echo '-')"
-
-echo -n "### Mesh-VPN: enabled: "
-uci -q get gluon.mesh_vpn.enabled || echo '-'
-
-echo "### Gateways:"
-for index in $(seq 1 8); do
-  METHOD=$(jsonfilter -i $STATISTICS -e @.mesh_vpn.groups.backbone.peers.gw0$index.method)
-  if [ ! -z $METHOD ]; then
-        UPTIME=$(jsonfilter -i $STATISTICS -e @.mesh_vpn.groups.backbone.peers.gw0$index.established)
-        UPTIME="$(echo "$UPTIME" | cut -d '.' -f 1)"
-        UPTIME=$(date -ud "@$UPTIME" +"$(( $UPTIME/3600/24 )) days %H hours %M minutes %S seconds")
-        echo "gw0$index:" $METHOD "up: " $UPTIME
-  fi
-done
 
 echo
 echo "### Mesh:"
@@ -62,6 +51,43 @@ for i in 0 1; do
 uci -q get wireless.mesh_radio$i.disabled > /dev/null
 if [ $? = '0' ]; then
 echo -n " Mesh on Radio$i enabled: "; if [ $(uci -q get wireless.mesh_radio$i.disabled || echo 1) = '1' ]; then echo '0'; else echo '1'; fi
+fi
+done
+## get mesh_vpn info
+json_load_file $NODEINFO
+json_select network
+if json_select mesh_vpn; then
+        if json_select bandwidth_limit; then
+                json_get_var bwlenabled enabled
+        fi
+        json_select ..
+        json_get_var provider provider
+        json_get_var meshvpnenabled enabled
+        json_select ..
+        json_get_var mac mac
+        echo
+        echo "### MESH_VPN provider: $provider, enabled: $meshvpnenabled, MAC: $mac"
+        echo "### Bandwidth limit: $bwlenabled"
+fi
+
+echo "### Gateways:"
+json_load_file $STATISTICS
+json_select "mesh_vpn"
+json_select "groups"
+json_select "backbone"
+json_select "peers"
+json_get_keys peers
+for gw in $peers; do
+    if json_select "$gw"; then
+        json_get_keys values
+        for key in $values; do
+            json_get_var $key $key
+        done
+        if [ ! -z $method ]; then
+            gwup="$(echo "$established" | cut -d '.' -f 1)"
+            timestring=$(date -ud "@$gwup" +"$(( $gwup/3600/24 )) days %H hours %M minutes %S seconds")
+            echo $gw -- method: $method - established: $timestring
+        fi
 fi
 done
 
@@ -86,7 +112,16 @@ jsonfilter -i $STATISTICS -e '$.clients.wifi24'
 echo -n " Connected clients 5 GHz: "
 jsonfilter -i $STATISTICS -e '$.clients.wifi5'
 
+## get memory usage
+json_load_file $STATISTICS
+json_select memory
+json_get_keys memitems
+for memitem in $memitems; do
+    json_get_var $memitem $memitem
+done
 echo
+echo "### RAM: $total, free: $free, available: $available, buffers: $buffers, cached: $cached"
+
 echo -n "### Uptime:"
 uptime
 
