@@ -213,6 +213,13 @@ if [ $GATEWAY ]; then
 # 	systemlog "No default gateway defined"
 fi
 
+## clients cannot connect for unknown reasons / if in doubt restart wifi 
+NOCLIENTS=0
+ASSOCLIST=$(iwinfo client0 assoclist)
+if [ "$ASSOCLIST" == "No station connected" ]; then
+	NOCLIENTS=1
+fi
+
 ######################################################################################
 # Main wifi restart logik
 ######################################################################################
@@ -258,6 +265,12 @@ if [ $DMESG_ATH10K -eq 1 ]; then
 # Bei diesem Problem das Wifi sofort neustarten lassen
 	touch $RESTARTFILE
 fi
+
+if [ $NOCLIENTS -eq 1 ]; then
+	WIFIRESTART=1
+	multilog "No station connected on client0."
+fi
+
 
 ######################################################################################
 # Should I really do it?
