@@ -4,10 +4,10 @@ json_init
 _set_var _json_no_warning 1
 
 NODEINFO="$(mktemp -p /tmp)"
-gluon-neighbour-info -d ::1 -p 1001 -c 1 -r nodeinfo > $NODEINFO
+gluon-neighbour-info -d ::1 -p 666 -c 1 -r nodeinfo > $NODEINFO
 
 STATISTICS="$(mktemp -p /tmp)"
-gluon-neighbour-info -d ::1 -p 1001 -c 1 -r statistics > $STATISTICS
+gluon-neighbour-info -d ::1 -p 666 -c 1 -r statistics > $STATISTICS
 
 echo "### Gluon-Info: "
 gluon-info

@@ -6,7 +6,7 @@ JSHN_DEBUG_PREFIX="json_debug: "
 json_init 
 
 STATISTICS="$(mktemp -p /tmp)"
-gluon-neighbour-info -d ::1 -p 1001 -c 1 -r statistics > $STATISTICS
+gluon-neighbour-info -d ::1 -p 666 -c 1 -r statistics > $STATISTICS
 
 json_load_file $STATISTICS
 
